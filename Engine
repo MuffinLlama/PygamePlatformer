@@ -33,6 +33,277 @@ class Animation():
         print(image) 
         image1 = pygame.transform.flip(image, flipX, flipY)
         screen.blit(image, (x, y))
+       
+  #this is the main file, I'd put it in a different file but idk how to on github lol
+  #player images by craftpix.net 
+#player sprite:https://free-game-assets.itch.io/free-3-character-sprite-pixel-art (link to the page)
+#coin sprite: me!
+#as with the heart image
+#enemy sprite done by craftpix.net
+
+import pygame
+import engine
+import utils
+
+def Text_Draw(t,x,y):
+        text = font.render(t, True, CYAN, DARK_GREY)
+        text_rectangle = text.get_rect()
+        text_rectangle.topleft = (x, y)
+        screen.blit(text, text_rectangle)
+
+#constant variables
+SCREEN_SIZE = (750, 500)
+DARK_GREY = (50, 50, 50)
+MUSTARD = (214, 222, 122)
+CYAN = (19, 237, 215)
+
+
+#init
+pygame.init()
+screen = pygame.display.set_mode(SCREEN_SIZE)
+pygame.display.set_caption("Platformer Ultra!")
+clock = pygame.time.Clock()
+font = pygame.font.Font("freesansbold.ttf", 24)
+
+#game states = win//lose
+game_state = 'playing'
+
+entities = []
+
+#player
+player_image = pygame.image.load('GraveRobber_idle (1)/sprite_0.png')
+player_x = 225
+player_y = 0
+player_speed = 0
+player_acceleration = 0.2
+player_width = 72
+player_height = 120
+
+player_direction = 'right'
+
+player_state = 'idle' #or walking/running
+
+
+
+#platforms
+platforms = [
+    #middle
+    pygame.Rect(100,300, 600, 50),
+    #left
+    pygame.Rect(100,250 ,50,50),
+    #right
+    pygame.Rect(650,250 ,50,50)
+]
+#coins
+coin_image = pygame.image.load('Coin_Piskel/Coin_1.png')
+
+coins = [
+    pygame.Rect(100,200,11,11),
+    pygame.Rect(200,250,11,11)
+]
+
+
+
+entities.append(utils.makeCoin (100,200))
+entities.append(utils.makeCoin (200,250))
+entities.append(utils.makeEnemy(550,200))
+entities.append(utils.makePlayer(225,0))
+
+score = 0
+
+
+
+lives = 3
+heart_image = pygame.image.load('Coin_Piskel/Heart_life.png')
+
+running = True
+while running:
+#game loop
+
+    #-----
+    #input
+    #-----
+    
+    #player quit check
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            #event number is actually 256, figured that out on my own :D 
+            running = False
+
+    if game_state == 'playing':
+
+        new_player_x = player_x
+        new_player_y = player_y
+
+        #player input
+        keys = pygame.key.get_pressed()
+        #a=left
+        if keys[pygame.K_a]:
+            new_player_x -= 2
+            player_direction = 'left'
+            player_state = 'walking'
+        #d=right
+        if keys[pygame.K_d]:
+            new_player_x += 2
+            player_direction = 'right'
+            player_state = 'walking'
+
+        if not keys[pygame.K_a] and not keys[pygame.K_d]:
+            player_state = 'idle'
+        #space=up
+        if keys[pygame.K_SPACE] and player_on_ground:
+            player_speed = -6
+
+
+
+    #-----
+    #update
+    #-----
+
+    if game_state == 'playing':
+
+        #update player animation
+        #player_animation[player_state].update()
+
+        #update animations
+        for entity in entities:
+            entity.animation.animationList[entity.state].update()
+        
+        #horizontal movement
+        new_player_rect = pygame.Rect(new_player_x,player_y,player_width,player_height)    
+        x_collision = False
+
+        #check against every platform
+        for p in platforms:
+            if p.colliderect(new_player_rect):
+                x_collision = True
+                break
+            
+        #set collision to true
+
+        if x_collision == False:
+            player_x = new_player_x
+
+        #vertical movement
+        player_speed += player_acceleration
+        new_player_y += player_speed 
+
+        new_player_rect = pygame.Rect(player_x,new_player_y,player_width,player_height)    
+        y_collision = False
+        player_on_ground = False
+
+        #check against every platform
+        for p in platforms:
+            if p.colliderect(new_player_rect):
+                y_collision = True
+                player_speed = 0
+                if p[1] > new_player_y:
+                    player_y = p[1] - player_height
+                    player_on_ground = True
+                break
+
+        #set collision to true
+
+        if y_collision == False:
+            player_y = new_player_y
+
+        #see if any coins have been collected
+        player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+
+        #collection system
+        for entity in entities:
+            if entity.type == 'collectable':
+                if entity.position.rect.colliderect(player_rect):
+                    entities.remove(entity)
+                    score += 1
+                    #win if score is 2
+                    if score >= 2:
+                        game_state = 'win'
+
+        #enemy system
+        for entity in entities:
+            if entity.type == 'dangerous':
+                if entity.position.rect.colliderect(player_rect):
+                    #see if player touches enemy
+                    #for e in enemies:
+                    #   if e.colliderect(player_rect):
+                    lives -= 1
+                    #reset player pos
+                    player_x = 210
+                    player_y = 0
+               #change gameset
+                #if no lives
+                    if lives <= 0:
+                        game_state = 'lose'
+
+
+        #see if player touches enemy
+        #for e in enemies:
+        #   if e.colliderect(player_rect):
+        #      lives -= 1
+        #     #reset player pos
+        #    player_x = 210
+         #   player_y = 0
+               #change gameset
+                #if no lives
+        #  if lives <= 0:
+          
+
+        #if there's no collision
+        #player_x = new_player_x
+
+    #----
+    #draw
+    #----
+
+    #background
+    screen.fill(DARK_GREY)
+
+
+
+                    
+    #platforms
+    for p in platforms:
+        pygame.draw.rect(screen, MUSTARD, p)
+
+    #draw system
+    for entity in entities:
+        s = entity.state
+        a = entity.animation.animationList[s]
+        a.draw(screen, entity.position.rect.x, entity.position.rect.y, True, False)  
+                        
+    #player
+    #if player_direction == 'right':
+        #screen.blit(player_image, (player_x, player_y))
+        #player_animation[player_state].draw(screen, player_x, player_y, False, False)
+    #elif player_direction == 'left':
+        #screen.blit(pygame.transform.flip(player_image, True, False), (player_x, player_y))
+        #player_animation[player_state].draw(screen, player_x, player_y, True, False)
+    #player information display
+
+    #score
+    screen.blit(coin_image, (10,10))
+    Text_Draw(str(score), 50,10)
+
+    #lives
+    for l in range(lives):
+        screen.blit(heart_image, (200 + (l*40),10))
+
+    if game_state == 'win':
+        Text_Draw('YOU WIN!', 50,50)
+        #win text
+    if game_state == 'lose':
+        Text_Draw('YOU LOSE LOL', 50,50)
+        #lose text
+    
+    #screen display
+    pygame.display.flip()
+
+    clock.tick(60)
+
+#quit
+pygame.quit()
+
         
         
 class Entity():
