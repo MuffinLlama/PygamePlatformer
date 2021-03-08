@@ -1,0 +1,44 @@
+import pygame
+
+class Position():
+    def __init__(self, x, y, w, h):
+        self.rect = pygame.Rect(x,y,w,h)
+
+class Animations():
+    def __init__(self):
+        self.animationList = {}
+    def add(self, state, animation):
+        self.animationList[state] = animation
+
+class Animation():
+    def __init__(self, imageList):
+        self.imageList = imageList
+        self.imageIndex = 0
+        self.animationTimer = 0
+        self.animationSpeed = 10
+    def update(self):
+        #solidify the timer
+        self.animationTimer += 1
+        if self.animationTimer >= self.animationSpeed:
+            #reset the timer
+            self.animationTimer = 0
+            self.imageIndex += 1
+            #incriment the current image
+            if self.imageIndex >len(self.imageList) - 1:
+                self.imageIndex = 0
+                #loop back to current image in the list
+                #once index gets too high
+    def draw(self, screen, x, y, flipX, flipY):
+        image = self.imageList[self.imageIndex]
+        print(image) 
+        image1 = pygame.transform.flip(image, flipX, flipY)
+        screen.blit(image, (x, y))
+        
+        
+class Entity():
+    def __init__(self):
+        self.state = 'idle'
+        self.type = 'normal'
+        self.position = None
+        self.animation= Animations()
+        
